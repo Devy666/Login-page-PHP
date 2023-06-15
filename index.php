@@ -1,75 +1,76 @@
 <?php 
   // get log in informations
   require_once 'login.php';
+  $error_msg = null;
   //create connection to database
   $connection =
     new mysqli($db_hostname, $db_username, $db_password, $db_database);
 
-    //in case of unsucesfull connection send info about the connecting error
+  //in case of unsucesfull connection send info about the connecting error
   if ($connection->connect_error) die($connection->connect_error);
 
-  // checking if user has submitted username and password
+  // checking if user has submitted username and password with POST function
   if (isset($_POST['name']) &&
       isset($_POST['password']))
   {
     //... and then secure input with sanitazing functions
-    $un_temp = sanitizeMySQL($connection, $_POST['name']);
-    $pw_temp = sanitizeMySQL($connection, $_POST['password']);
+    $sent_username = sanitize($connection, $_POST['name']);
+    $sent_password = sanitize($connection, $_POST['password']);
 
     //query for finding username in entire database
-    $query  = "SELECT * FROM users WHERE name='$un_temp'";
+    $query  = "SELECT * FROM users WHERE name='$sent_username'";
     $result = $connection->query($query);
     //checking if there was no bug under the checking, otherwise sending msg
     if (!$result) die($connection->error);
     // if found in database...
     elseif ($result->num_rows)
     {
-        //getting array with login information into an array 
+        //getting array with login information into an row array
         $row = $result->fetch_array(MYSQLI_NUM);
            //closing the connection 
           $result->close();
         // salt information
         $salt1 = "kRm!e";
         $salt2 = "p3ddD";
-        $token = hash('ripemd128', "$salt1$pw_temp$salt2");
+        $token = hash('ripemd128', "$salt1$sent_password$salt2");
 
         //checking if secured password is the row array
         // if yes - redirecting to index side
         if ($token == $row[2]) {
+          // start session and save login information into session
           session_start();
-          $_SESSION['name'] = $un_temp;
-          $_SESSION['password'] = $pw_temp;
+          $_SESSION['name'] = $sent_username;
+          $_SESSION['password'] = $sent_password;
+          // redirekt to index1.php
           header("Location: /index1.php");
         } 
           // if not - msg about mistake 
         else {
-          die("Invalid username/password combination");
+          $error_msg = "Invalid username/password combination";
         }
     }
     // If username not found
-    else die("Invalid username/password combination");
+    else {
+      $error_msg = "Something went wrong. Please try again.";
+    }
   }
-  //If user didnt fill both username and password
-  // else
-  // {
-  //   header('WWW-Authenticate: Basic realm="Restricted Section"');
-  //   header('HTTP/1.0 401 Unauthorized');
-  //   die ("Please enter your username and password");
-  // }
-  // ending connections
   $connection->close();
 
-  // function to secure input
+  // functions to sanitate input
   function sanitizeString($var)
   {
+    //removing slashes from a string
     $var = stripslashes($var);
+    //changes html syntax to text
     $var = htmlentities($var);
+    //removing tags from a string
     $var = strip_tags($var);
     return $var;
   }
 
-  function sanitizeMySQL($connection, $var)
-  { // Using the mysqli extension
+  function sanitize($connection, $var)
+  { 
+    //removing escaping characters /n 
     $var = $connection->real_escape_string($var);
     $var = sanitizeString($var);
     return $var;
@@ -91,7 +92,10 @@
       <input type="password" name="password" />
       <input type="submit" />
     </form>
-    
+    <?php if (isset($error_msg)) {
+      echo "<p>$error_msg</p>";
+    }
+    ?>
   </body>
 </html>
 
