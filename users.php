@@ -1,15 +1,15 @@
-<?php
+<?php 
 //get login information from login.php
   require_once 'login.php';
   //create connection to database
   $connection =
     new mysqli($db_hostname, $db_username, $db_password, $db_database);
-  //in case of unsucesfull connection send info about the connecting error
+  //in case of unsucesfull connection show info about the connecting error
   if ($connection->connect_error) die ($connection->connect_error);
-  //query for creating a table with id, name and password
+  //query for creating a table with id, unique name and password
   $query_table = "CREATE TABLE IF NOT EXISTS users (
     id INT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(32) NOT NULL,
+    name VARCHAR(32) NOT NULL UNIQUE,
     password VARCHAR(64) NOT NULL,
     PRIMARY KEY (id)
   )";
@@ -35,7 +35,7 @@
   $secure_pass = hash('ripemd128', "$salt1$password$salt2");
   new_user($connection, $name, $secure_pass);
 
-  //functions for adding new user to a table
+  //function for adding new user to a table
   function new_user($connection, $name, $pass)
   {
     //query to database
