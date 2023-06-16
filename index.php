@@ -41,8 +41,8 @@
           session_start();
           $_SESSION['name'] = $sent_username;
           $_SESSION['password'] = $sent_password;
-          // redirekt to index1.php
-          header("Location: /index1.php");
+          // redirekt to access.php
+          header("Location: /access.php");
         } 
           // if not - msg about mistake 
         else {
